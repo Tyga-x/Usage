@@ -3,6 +3,9 @@
 # Exit on error
 set -e
 
+# Prompt for IP address
+read -p "Enter your server's IP address: " SERVER_IP
+
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
@@ -57,4 +60,9 @@ else
     sudo systemctl restart usage-monitor
 fi
 
-echo "Installation complete! Access the web interface at http://<your-vps-ip>:5000"
+# Open port 5000 in the firewall
+echo "Opening port 5000 in the firewall..."
+sudo ufw allow 5000
+
+# Print success message
+echo "Installation complete! Access the web interface at http://${SERVER_IP}:5000"
