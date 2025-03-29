@@ -66,3 +66,7 @@ sudo ufw allow 5000
 
 # Print success message with the provided IP address
 echo "Installation complete! Access the web interface at http://${SERVER_IP}:5000"
+
+# Automatically open the web interface (optional)
+echo "Opening the web interface in your browser..."
+xdg-open "http://${SERVER_IP}:5000" || true
