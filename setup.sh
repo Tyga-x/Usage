@@ -6,20 +6,21 @@ set -e
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
-sudo apt install -y python3 python3-pip git nginx sqlite3
+sudo apt install -y python3 python3-pip git sqlite3
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
 pip3 install flask flask-talisman gunicorn python-dotenv
 
+# Remove old repository if it exists
+if [ -d "/opt/Usage" ]; then
+    echo "Removing old repository..."
+    sudo rm -rf /opt/Usage
+fi
+
 # Clone the repository
 echo "Cloning the repository..."
-if [ ! -d "/opt/Usage" ]; then
-    sudo git clone https://github.com/Tyga-x/Usage.git /opt/Usage
-else
-    echo "Repository already cloned. Pulling latest changes..."
-    cd /opt/Usage && sudo git pull origin main
-fi
+sudo git clone https://github.com/Tyga-x/Usage.git /opt/Usage
 
 # Create .env file with database path
 echo "Setting up environment variables..."
@@ -56,28 +57,4 @@ else
     sudo systemctl restart usage-monitor
 fi
 
-# Configure Nginx for HTTP
-echo "Configuring Nginx..."
-NGINX_CONF="/etc/nginx/sites-available/usage-monitor"
-if [ ! -f "$NGINX_CONF" ]; then
-    cat <<EOF | sudo tee $NGINX_CONF > /dev/null
-server {
-    listen 5000;
-    server_name _;
-
-    location / {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    }
-}
-EOF
-    sudo ln -sf /etc/nginx/sites-available/usage-monitor /etc/nginx/sites-enabled/
-    sudo systemctl restart nginx
-else
-    echo "Nginx configuration already exists. Reloading Nginx..."
-    sudo systemctl reload nginx
-fi
-
-echo "Installation complete! Access the web interface at http://<your-vps-ip>"
+echo "Installation complete! Access the web interface at http://<your-vps-ip>:5000"
