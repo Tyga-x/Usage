@@ -13,20 +13,20 @@ echo "Installing Python dependencies..."
 pip3 install flask flask-talisman gunicorn python-dotenv
 
 # Remove old repository if it exists
-if [ -d "/opt/Usage" ]; then
+if [ -d "/home/ubuntu/Usage" ]; then
     echo "Removing old repository..."
-    sudo rm -rf /opt/Usage
+    sudo rm -rf /home/ubuntu/Usage
 fi
 
 # Clone the repository
 echo "Cloning the repository..."
-sudo git clone https://github.com/Tyga-x/Usage.git /opt/Usage
+sudo git clone https://github.com/Tyga-x/Usage.git /home/ubuntu/Usage
 
 # Create .env file with database path
 echo "Setting up environment variables..."
 DB_PATH="/etc/x-ui/x-ui.db"
-if [ ! -f "/opt/Usage/.env" ]; then
-    echo "DB_PATH=$DB_PATH" | sudo tee /opt/Usage/.env > /dev/null
+if [ ! -f "/home/ubuntu/Usage/.env" ]; then
+    echo "DB_PATH=$DB_PATH" | sudo tee /home/ubuntu/Usage/.env > /dev/null
 else
     echo ".env file already exists. Skipping..."
 fi
@@ -42,7 +42,7 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=/opt/Usage
+WorkingDirectory=/home/ubuntu/Usage
 ExecStart=/usr/local/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
 Restart=always
 
