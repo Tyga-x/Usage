@@ -3,17 +3,21 @@
 # Exit on error
 set -e
 
-# Prompt the user for the server's IP address
-exec 3<&0  # Save stdin to file descriptor 3
+# Redirect stdin to the terminal for interactive input
+exec 3<&0  # Save original stdin
 exec 0</dev/tty  # Redirect stdin to the terminal
+
+# Prompt the user for the server's IP address
 read -p "Enter your server's IP address: " SERVER_IP
-exec 0<&3  # Restore original stdin
 
 # Validate the IP address format
 if [[ ! $SERVER_IP =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
     echo "Invalid IP address. Exiting..."
     exit 1
 fi
+
+# Restore original stdin
+exec 0<&3
 
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
@@ -75,7 +79,3 @@ sudo ufw allow 5000
 
 # Print success message with the provided IP address
 echo "Installation complete! Access the web interface at http://${SERVER_IP}:5000"
-
-# Automatically open the web interface (optional)
-echo "Opening the web interface in your browser..."
-xdg-open "http://${SERVER_IP}:5000" || true
