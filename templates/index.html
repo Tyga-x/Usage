@@ -1,26 +1,109 @@
-<div class="metric">
-    <strong>Total Usage:</strong> <span id="total-usage">Loading...</span> GB
-</div>
-<div class="metric">
-    <strong>Daily Usage:</strong> <span id="daily-usage">Loading...</span> GB
-</div>
-<div class="metric">
-    <strong>Yesterday's Usage:</strong> <span id="yesterday-usage">Loading...</span> GB
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Monitor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric strong {
+            font-size: 1rem;
+            color: #555;
+        }
+        .metric span {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .loading {
+            text-align: center;
+            font-size: 1rem;
+            color: #777;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .metric {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Outbound Traffic Monitor</h1>
+        <div class="metric">
+            <strong>Total Usage:</strong>
+            <span id="total-usage">Loading...</span> GB
+        </div>
+        <div class="metric">
+            <strong>Daily Usage:</strong>
+            <span id="daily-usage">Loading...</span> GB
+        </div>
+        <div class="metric">
+            <strong>Yesterday's Usage:</strong>
+            <span id="yesterday-usage">Loading...</span> GB
+        </div>
+        <div class="loading" id="loading-message">Fetching data...</div>
+    </div>
 
-<script>
-    function fetchData() {
-        $.getJSON("/data", function(data) {
-            $("#total-usage").text(data.total_usage_gb || "N/A");
-            $("#daily-usage").text(data.daily_usage_gb || "N/A");
-            $("#yesterday-usage").text(data.yesterday_usage_gb || "N/A");
-        }).fail(function() {
-            $("#total-usage").text("Error");
-            $("#daily-usage").text("Error");
-            $("#yesterday-usage").text("Error");
+    <script>
+        function fetchData() {
+            $.getJSON("/data", function(data) {
+                $("#total-usage").text(data.total_usage_gb || "N/A");
+                $("#daily-usage").text(data.daily_usage_gb || "N/A");
+                $("#yesterday-usage").text(data.yesterday_usage_gb || "N/A");
+                $("#loading-message").hide(); // Hide loading message after data is fetched
+            }).fail(function() {
+                $("#total-usage").text("Error");
+                $("#daily-usage").text("Error");
+                $("#yesterday-usage").text("Error");
+                $("#loading-message").text("Failed to fetch data.");
+            });
+        }
+
+        // Fetch data every 10 seconds
+        setInterval(fetchData, 10000);
+
+        // Initial fetch
+        $(document).ready(function() {
+            fetchData();
         });
-    }
-
-    setInterval(fetchData, 10000);
-    fetchData();
-</script>
+    </script>
+</body>
+</html>
