@@ -59,9 +59,12 @@ def get_traffic_data():
             "daily_usage_gb": round(daily_usage_gb, 2),
             "yesterday_usage_gb": round(yesterday_usage_gb, 2),
         }
-    except Exception as e:
+    except sqlite3.Error as e:
         app.logger.error(f"Database error: {e}")
-        return {"error": "Failed to fetch traffic data."}
+        return {"error": "Database error. Check logs for details."}
+    except Exception as e:
+        app.logger.error(f"Unexpected error: {e}")
+        return {"error": "An unexpected error occurred. Check logs for details."}
     finally:
         if 'conn' in locals():
             conn.close()
