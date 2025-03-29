@@ -4,7 +4,16 @@
 set -e
 
 # Prompt the user for the server's IP address
+exec 3<&0  # Save stdin to file descriptor 3
+exec 0</dev/tty  # Redirect stdin to the terminal
 read -p "Enter your server's IP address: " SERVER_IP
+exec 0<&3  # Restore original stdin
+
+# Validate the IP address format
+if [[ ! $SERVER_IP =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    echo "Invalid IP address. Exiting..."
+    exit 1
+fi
 
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
