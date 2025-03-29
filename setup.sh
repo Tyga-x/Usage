@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-# Prompt for IP address
+# Prompt the user for the server's IP address
 read -p "Enter your server's IP address: " SERVER_IP
 
 # Update and install dependencies
@@ -64,5 +64,5 @@ fi
 echo "Opening port 5000 in the firewall..."
 sudo ufw allow 5000
 
-# Print success message
+# Print success message with the provided IP address
 echo "Installation complete! Access the web interface at http://${SERVER_IP}:5000"
