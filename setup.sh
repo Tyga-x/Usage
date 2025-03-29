@@ -62,7 +62,7 @@ NGINX_CONF="/etc/nginx/sites-available/usage-monitor"
 if [ ! -f "$NGINX_CONF" ]; then
     cat <<EOF | sudo tee $NGINX_CONF > /dev/null
 server {
-    listen 80;
+    listen 5000;
     server_name _;
 
     location / {
