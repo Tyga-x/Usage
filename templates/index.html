@@ -1,1 +1,26 @@
-.
+<div class="metric">
+    <strong>Total Usage:</strong> <span id="total-usage">Loading...</span> GB
+</div>
+<div class="metric">
+    <strong>Daily Usage:</strong> <span id="daily-usage">Loading...</span> GB
+</div>
+<div class="metric">
+    <strong>Yesterday's Usage:</strong> <span id="yesterday-usage">Loading...</span> GB
+</div>
+
+<script>
+    function fetchData() {
+        $.getJSON("/data", function(data) {
+            $("#total-usage").text(data.total_usage_gb || "N/A");
+            $("#daily-usage").text(data.daily_usage_gb || "N/A");
+            $("#yesterday-usage").text(data.yesterday_usage_gb || "N/A");
+        }).fail(function() {
+            $("#total-usage").text("Error");
+            $("#daily-usage").text("Error");
+            $("#yesterday-usage").text("Error");
+        });
+    }
+
+    setInterval(fetchData, 10000);
+    fetchData();
+</script>
