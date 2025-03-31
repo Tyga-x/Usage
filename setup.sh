@@ -22,7 +22,7 @@ exec 0<&3
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
-sudo apt install -y python3 python3-venv git sqlite3 ufw
+sudo apt install -y python3 python3-venv git sqlite3 ufw net-tools
 
 # Create a virtual environment in /home/ubuntu
 echo "Creating a Python virtual environment..."
@@ -54,7 +54,7 @@ sudo git clone https://github.com/Tyga-x/Usage.git /home/ubuntu/Usage
 
 # Create .env file with database path
 echo "Setting up environment variables..."
-DB_PATH="/home/ubuntu/x-ui.db"  # Database file in /home/ubuntu
+DB_PATH="/etc/x-ui/x-ui.db"  # Ensure this matches your actual database path
 if [ ! -f "/home/ubuntu/Usage/.env" ]; then
     echo "DB_PATH=$DB_PATH" | sudo tee /home/ubuntu/Usage/.env > /dev/null
 else
@@ -90,6 +90,17 @@ fi
 # Open port 5000 in the firewall
 echo "Opening port 5000 in the firewall..."
 sudo ufw allow 5000
+sudo ufw enable || true  # Enable UFW if not already enabled
+
+# Verify the application is listening on port 5000
+echo "Verifying port 5000..."
+sudo apt install -y net-tools  # Install net-tools if not already installed
+LISTENING=$(sudo netstat -tuln | grep 5000)
+if [[ -z "$LISTENING" ]]; then
+    echo "WARNING: The application is not listening on port 5000. Check logs for errors."
+else
+    echo "Application is listening on port 5000."
+fi
 
 # Print success message with the provided IP address
 echo "Installation complete! Access the web interface at http://${SERVER_IP}:5000"
