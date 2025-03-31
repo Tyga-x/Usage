@@ -24,7 +24,7 @@ echo "Updating system and installing dependencies..."
 sudo apt update -y
 sudo apt install -y python3 python3-venv git sqlite3 ufw
 
-# Create a virtual environment
+# Create a virtual environment in /home/ubuntu
 echo "Creating a Python virtual environment..."
 VENV_PATH="/home/ubuntu/usage-venv"
 python3 -m venv $VENV_PATH
@@ -54,7 +54,7 @@ sudo git clone https://github.com/Tyga-x/Usage.git /home/ubuntu/Usage
 
 # Create .env file with database path
 echo "Setting up environment variables..."
-DB_PATH="/etc/x-ui/x-ui.db"
+DB_PATH="/home/ubuntu/x-ui.db"  # Database file in /home/ubuntu
 if [ ! -f "/home/ubuntu/Usage/.env" ]; then
     echo "DB_PATH=$DB_PATH" | sudo tee /home/ubuntu/Usage/.env > /dev/null
 else
