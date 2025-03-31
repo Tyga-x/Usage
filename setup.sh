@@ -22,7 +22,7 @@ exec 0<&3
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
-sudo apt install -y python3 python3-venv git sqlite3
+sudo apt install -y python3 python3-venv git sqlite3 ufw
 
 # Create a virtual environment
 echo "Creating a Python virtual environment..."
