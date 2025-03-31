@@ -22,11 +22,25 @@ exec 0<&3
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
-sudo apt install -y python3 python3-pip git sqlite3
+sudo apt install -y python3 python3-venv git sqlite3
 
-# Install Python dependencies
+# Create a virtual environment
+echo "Creating a Python virtual environment..."
+VENV_PATH="/home/ubuntu/usage-venv"
+python3 -m venv $VENV_PATH
+
+# Activate the virtual environment
+source $VENV_PATH/bin/activate
+
+# Upgrade pip in the virtual environment
+pip install --upgrade pip
+
+# Install Python dependencies in the virtual environment
 echo "Installing Python dependencies..."
-pip3 install flask flask-talisman gunicorn python-dotenv
+pip install flask flask-talisman gunicorn python-dotenv
+
+# Deactivate the virtual environment (it will be reactivated by the systemd service)
+deactivate
 
 # Remove old repository if it exists
 if [ -d "/home/ubuntu/Usage" ]; then
@@ -59,7 +73,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=/home/ubuntu/Usage
-ExecStart=/usr/local/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
+ExecStart=$VENV_PATH/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
 Restart=always
 
 [Install]
