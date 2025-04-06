@@ -54,6 +54,9 @@ if [ -d "/home/ubuntu/usage-venv" ]; then
     sudo rm -rf /home/ubuntu/usage-venv
 fi
 
+# Change to a safe working directory
+cd /home/ubuntu
+
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
