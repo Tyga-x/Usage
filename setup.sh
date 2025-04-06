@@ -3,21 +3,14 @@
 # Exit on error
 set -e
 
-# Redirect stdin to the terminal for interactive input
-exec 3<&0  # Save original stdin
-exec 0</dev/tty  # Redirect stdin to the terminal
-
-# Prompt the user for the server's IP address
-read -p "Enter your server's IP address: " SERVER_IP
-
-# Validate the IP address format
-if [[ ! $SERVER_IP =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-    echo "Invalid IP address. Exiting..."
+# Detect the server's public IP address automatically
+echo "Detecting server's public IP address..."
+SERVER_IP=$(curl -s https://api.ipify.org)
+if [[ -z "$SERVER_IP" || ! $SERVER_IP =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+    echo "Failed to detect the server's public IP address. Exiting..."
     exit 1
 fi
-
-# Restore original stdin
-exec 0<&3
+echo "Detected server IP: $SERVER_IP"
 
 # Stop and remove old installation if it exists
 echo "Stopping and removing old installation..."
