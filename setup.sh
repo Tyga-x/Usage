@@ -19,10 +19,45 @@ fi
 # Restore original stdin
 exec 0<&3
 
+# Stop and remove old installation if it exists
+echo "Stopping and removing old installation..."
+
+# Stop the systemd service if it exists
+if systemctl is-active --quiet usage-monitor; then
+    echo "Stopping existing usage-monitor service..."
+    sudo systemctl stop usage-monitor || true
+fi
+
+# Disable the systemd service if it exists
+if [ -f "/etc/systemd/system/usage-monitor.service" ]; then
+    echo "Disabling existing usage-monitor service..."
+    sudo systemctl disable usage-monitor || true
+    sudo rm -f /etc/systemd/system/usage-monitor.service
+fi
+
+# Kill any processes using port 5000
+echo "Checking for processes using port 5000..."
+PID=$(sudo lsof -t -i :5000 || true)
+if [ ! -z "$PID" ]; then
+    echo "Killing process(es) using port 5000: $PID"
+    sudo kill -9 $PID || true
+fi
+
+# Remove old repository and virtual environment
+if [ -d "/home/ubuntu/Usage" ]; then
+    echo "Removing old repository..."
+    sudo rm -rf /home/ubuntu/Usage
+fi
+
+if [ -d "/home/ubuntu/usage-venv" ]; then
+    echo "Removing old virtual environment..."
+    sudo rm -rf /home/ubuntu/usage-venv
+fi
+
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt update -y
-sudo apt install -y python3 python3-venv git sqlite3 ufw net-tools
+sudo apt install -y python3 python3-venv git sqlite3 curl
 
 # Create a virtual environment in /home/ubuntu
 echo "Creating a Python virtual environment..."
@@ -42,12 +77,6 @@ pip install flask flask-talisman gunicorn python-dotenv
 # Deactivate the virtual environment (it will be reactivated by the systemd service)
 deactivate
 
-# Remove old repository if it exists
-if [ -d "/home/ubuntu/Usage" ]; then
-    echo "Removing old repository..."
-    sudo rm -rf /home/ubuntu/Usage
-fi
-
 # Clone the repository
 echo "Cloning the repository..."
 sudo git clone https://github.com/Tyga-x/Usage.git /home/ubuntu/Usage
@@ -64,8 +93,7 @@ fi
 # Set up systemd service
 echo "Configuring systemd service..."
 SERVICE_FILE="/etc/systemd/system/usage-monitor.service"
-if [ ! -f "$SERVICE_FILE" ]; then
-    cat <<EOF | sudo tee $SERVICE_FILE > /dev/null
+cat <<EOF | sudo tee $SERVICE_FILE > /dev/null
 [Unit]
 Description=Usage Monitor Service
 After=network.target
@@ -75,26 +103,19 @@ User=root
 WorkingDirectory=/home/ubuntu/Usage
 ExecStart=$VENV_PATH/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
 Restart=always
+Environment="DB_PATH=$DB_PATH"
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    sudo systemctl daemon-reload
-    sudo systemctl enable usage-monitor
-    sudo systemctl start usage-monitor
-else
-    echo "Systemd service already configured. Restarting service..."
-    sudo systemctl restart usage-monitor
-fi
 
-# Open port 5000 in the firewall
-echo "Opening port 5000 in the firewall..."
-sudo ufw allow 5000
-sudo ufw enable || true  # Enable UFW if not already enabled
+# Reload systemd and start the service
+sudo systemctl daemon-reload
+sudo systemctl enable usage-monitor
+sudo systemctl start usage-monitor
 
 # Verify the application is listening on port 5000
 echo "Verifying port 5000..."
-sudo apt install -y net-tools  # Install net-tools if not already installed
 LISTENING=$(sudo netstat -tuln | grep 5000)
 if [[ -z "$LISTENING" ]]; then
     echo "WARNING: The application is not listening on port 5000. Check logs for errors."
