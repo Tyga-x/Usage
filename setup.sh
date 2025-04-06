@@ -126,5 +126,8 @@ else
     echo "Application is listening on port 5000."
 fi
 
-# Print success message with the provided IP address
-echo "Installation complete! Access the web interface at http://${SERVER_IP}:5000"
+# Final success message
+echo "Installation complete!"
+echo "Access the web interface at http://${SERVER_IP}:5000"
+echo "To check the status of the service, run: sudo systemctl status usage-monitor"
+echo "To view logs, run: sudo journalctl -u usage-monitor -b"
