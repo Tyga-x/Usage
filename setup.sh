@@ -110,14 +110,6 @@ sudo systemctl daemon-reload
 sudo systemctl enable usage-monitor
 sudo systemctl start usage-monitor
 
-# Verify the application is listening on port 9000
-echo "Verifying port 9000..."
-LISTENING=$(sudo netstat -tuln | grep 9000)
-if [[ -z "$LISTENING" ]]; then
-    echo "WARNING: The application is not listening on port 9000. Check logs for errors."
-else
-    echo "Application is listening on port 9000."
-fi
 
 # Final success message
 echo "Installation complete!"
