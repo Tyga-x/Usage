@@ -9,6 +9,7 @@ import logging
 # Load environment variables
 load_dotenv()
 
+# Initialize Flask app
 app = Flask(__name__)
 
 # Security headers with Flask-Talisman
@@ -19,9 +20,14 @@ DB_PATH = os.getenv("DB_PATH", "/etc/x-ui/x-ui.db")
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_traffic_data():
+    """
+    Fetch traffic data from the SQLite database.
+    """
     try:
+        # Connect to the database
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
@@ -59,23 +65,38 @@ def get_traffic_data():
             "daily_usage_gb": round(daily_usage_gb, 2),
             "yesterday_usage_gb": round(yesterday_usage_gb, 2),
         }
+
     except sqlite3.Error as e:
-        app.logger.error(f"Database error: {e}")
+        logger.error(f"Database error: {e}")
         return {"error": "Database error. Check logs for details."}
+
     except Exception as e:
-        app.logger.error(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}")
         return {"error": "An unexpected error occurred. Check logs for details."}
+
     finally:
-        if 'conn' in locals():
+        if 'conn' in locals() and conn:
             conn.close()
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    """
+    Render the main HTML page.
+    """
+    try:
+        return render_template("index.html")
+    except Exception as e:
+        logger.error(f"Error rendering index.html: {e}")
+        return "An error occurred while loading the page. Please check the logs.", 500
 
 @app.route("/data")
 def data():
-    return jsonify(get_traffic_data())
+    """
+    API endpoint to fetch traffic data.
+    """
+    traffic_data = get_traffic_data()
+    return jsonify(traffic_data)
 
 if __name__ == "__main__":
+    # Run the app in debug mode only for development
     app.run(host="0.0.0.0", port=5000, debug=False)
