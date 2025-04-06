@@ -28,11 +28,11 @@ if [ -f "/etc/systemd/system/usage-monitor.service" ]; then
     sudo rm -f /etc/systemd/system/usage-monitor.service
 fi
 
-# Kill any processes using port 5000
-echo "Checking for processes using port 5000..."
-PID=$(sudo lsof -t -i :5000 || true)
+# Kill any processes using port 9000
+echo "Checking for processes using port 9000..."
+PID=$(sudo lsof -t -i :9000 || true)
 if [ ! -z "$PID" ]; then
-    echo "Killing process(es) using port 5000: $PID"
+    echo "Killing process(es) using port 9000: $PID"
     sudo kill -9 $PID || true
 fi
 
@@ -97,7 +97,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=/home/ubuntu/Usage
-ExecStart=$VENV_PATH/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
+ExecStart=$VENV_PATH/bin/gunicorn --workers 3 --bind 0.0.0.0:9000 app:app
 Restart=always
 Environment="DB_PATH=$DB_PATH"
 
@@ -110,17 +110,20 @@ sudo systemctl daemon-reload
 sudo systemctl enable usage-monitor
 sudo systemctl start usage-monitor
 
-# Verify the application is listening on port 5000
-echo "Verifying port 5000..."
-LISTENING=$(sudo netstat -tuln | grep 5000)
+# Verify the application is listening on port 9000
+echo "Verifying port 9000..."
+LISTENING=$(sudo netstat -tuln | grep 9000)
 if [[ -z "$LISTENING" ]]; then
-    echo "WARNING: The application is not listening on port 5000. Check logs for errors."
+    echo "WARNING: The application is not listening on port 9000. Check logs for errors."
 else
-    echo "Application is listening on port 5000."
+    echo "Application is listening on port 9000."
 fi
 
 # Final success message
 echo "Installation complete!"
-echo "Access the web interface at http://${SERVER_IP}:5000"
+echo "Access the web interface at http://${SERVER_IP}:9000"
 echo "To check the status of the service, run: sudo systemctl status usage-monitor"
 echo "To view logs, run: sudo journalctl -u usage-monitor -b"
+
+# Wait for user input before exiting
+read -p "Press Enter to exit..."
