@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from flask_talisman import Talisman
 from dotenv import load_dotenv
 import logging
+from pytz import timezone
 
 # Load environment variables
 load_dotenv()
@@ -31,8 +32,10 @@ def get_traffic_data():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        # Get current date and yesterday's date
-        today = datetime.now().date()
+        # Get current date and yesterday's date in UTC
+        utc_tz = timezone("UTC")
+        now = datetime.now(utc_tz)
+        today = now.date()
         yesterday = today - timedelta(days=1)
 
         # Query total usage
@@ -40,19 +43,11 @@ def get_traffic_data():
         total_usage = cursor.fetchone()[0] or 0  # Default to 0 if no data
 
         # Query daily usage for today
-        cursor.execute(f"""
-            SELECT SUM(total) 
-            FROM outbound_traffics 
-            WHERE DATE(timestamp) = '{today}';
-        """)
+        cursor.execute("SELECT SUM(total) FROM outbound_traffics WHERE DATE(timestamp) = ?;", (today,))
         daily_usage = cursor.fetchone()[0] or 0
 
         # Query daily usage for yesterday
-        cursor.execute(f"""
-            SELECT SUM(total) 
-            FROM outbound_traffics 
-            WHERE DATE(timestamp) = '{yesterday}';
-        """)
+        cursor.execute("SELECT SUM(total) FROM outbound_traffics WHERE DATE(timestamp) = ?;", (yesterday,))
         yesterday_usage = cursor.fetchone()[0] or 0
 
         # Convert bytes to GB
@@ -68,11 +63,11 @@ def get_traffic_data():
 
     except sqlite3.Error as e:
         logger.error(f"Database error: {e}")
-        return {"error": "Database error. Check logs for details."}
+        return {"error": "Database error. Check logs for details."}, 500
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        return {"error": "An unexpected error occurred. Check logs for details."}
+        return {"error": "An unexpected error occurred. Check logs for details."}, 500
 
     finally:
         if 'conn' in locals() and conn:
