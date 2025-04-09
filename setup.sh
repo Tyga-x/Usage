@@ -5,7 +5,7 @@ set -e
 
 # Detect the server's public IP address automatically
 echo "Detecting server's public IP address..."
-SERVER_IP=$(curl -s https://api.ipify.org)
+SERVER_IP=$(curl -s https://api.ipify.org || dig +short myip.opendns.com @resolver1.opendns.com || hostname -I | awk '{print $1}')
 if [[ -z "$SERVER_IP" || ! $SERVER_IP =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
     echo "Failed to detect the server's public IP address. Exiting..."
     exit 1
@@ -32,8 +32,15 @@ fi
 echo "Checking for processes using port 9000..."
 PID=$(sudo lsof -t -i :9000 || true)
 if [ ! -z "$PID" ]; then
-    echo "Killing process(es) using port 9000: $PID"
-    sudo kill -9 $PID || true
+    echo "Process(es) using port 9000: $PID"
+    read -p "Kill these processes? (y/n): " KILL_CONFIRM
+    if [[ $KILL_CONFIRM == "y" || $KILL_CONFIRM == "Y" ]]; then
+        sudo kill -9 $PID || true
+        echo "Processes killed."
+    else
+        echo "Exiting due to port conflict. Please free port 9000 manually."
+        exit 1
+    fi
 fi
 
 # Remove old repository and virtual environment
@@ -77,9 +84,18 @@ deactivate
 echo "Cloning the repository..."
 sudo git clone https://github.com/Tyga-x/Usage.git /home/ubuntu/Usage
 
+# Set ownership of the repository and virtual environment to root
+sudo chown -R root:root $VENV_PATH /home/ubuntu/Usage
+
+# Validate database path
+DB_PATH="/etc/x-ui/x-ui.db"  # Ensure this matches your actual database path
+if [ ! -f "$DB_PATH" ]; then
+    echo "Database file not found at $DB_PATH. Exiting..."
+    exit 1
+fi
+
 # Create .env file with database path
 echo "Setting up environment variables..."
-DB_PATH="/etc/x-ui/x-ui.db"  # Ensure this matches your actual database path
 if [ ! -f "/home/ubuntu/Usage/.env" ]; then
     echo "DB_PATH=$DB_PATH" | sudo tee /home/ubuntu/Usage/.env > /dev/null
 else
@@ -89,6 +105,7 @@ fi
 # Set up systemd service
 echo "Configuring systemd service..."
 SERVICE_FILE="/etc/systemd/system/usage-monitor.service"
+WORKERS=$(nproc)  # Dynamically calculate workers based on CPU cores
 cat <<EOF | sudo tee $SERVICE_FILE > /dev/null
 [Unit]
 Description=Usage Monitor Service
@@ -97,7 +114,7 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=/home/ubuntu/Usage
-ExecStart=$VENV_PATH/bin/gunicorn --workers 3 --bind 0.0.0.0:9000 app:app
+ExecStart=$VENV_PATH/bin/gunicorn --workers $WORKERS --bind 0.0.0.0:9000 app:app
 Restart=always
 Environment="DB_PATH=$DB_PATH"
 
@@ -109,7 +126,6 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable usage-monitor
 sudo systemctl start usage-monitor
-
 
 # Final success message
 echo "Installation complete!"
