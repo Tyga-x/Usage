@@ -2,26 +2,20 @@ import os
 from flask import Flask, render_template, jsonify
 import sqlite3
 from datetime import datetime, timedelta
-from flask_talisman import Talisman
-from dotenv import load_dotenv
-import logging
 from pytz import timezone
+from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Security headers with Flask-Talisman
-Talisman(app, content_security_policy=None)
-
-# Database path (use environment variable for production)
+# Get database path from environment variable
 DB_PATH = os.getenv("DB_PATH", "/etc/x-ui/x-ui.db")
 
-# Logging configuration
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Set local time zone (Asia/Tehran)
+LOCAL_TIMEZONE = timezone("Asia/Tehran")
 
 def get_traffic_data():
     """
@@ -32,9 +26,8 @@ def get_traffic_data():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        # Get current date and yesterday's date in UTC
-        utc_tz = timezone("UTC")
-        now = datetime.now(utc_tz)
+        # Get current date and yesterday's date in local time zone
+        now = datetime.now(LOCAL_TIMEZONE)
         today = now.date()
         yesterday = today - timedelta(days=1)
 
@@ -62,11 +55,11 @@ def get_traffic_data():
         }
 
     except sqlite3.Error as e:
-        logger.error(f"Database error: {e}")
+        app.logger.error(f"Database error: {e}")
         return {"error": "Database error. Check logs for details."}, 500
 
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        app.logger.error(f"Unexpected error: {e}")
         return {"error": "An unexpected error occurred. Check logs for details."}, 500
 
     finally:
@@ -78,11 +71,7 @@ def index():
     """
     Render the main HTML page.
     """
-    try:
-        return render_template("index.html")
-    except Exception as e:
-        logger.error(f"Error rendering index.html: {e}")
-        return "An error occurred while loading the page. Please check the logs.", 500
+    return render_template("index.html")
 
 @app.route("/data")
 def data():
