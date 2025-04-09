@@ -69,38 +69,54 @@
         <h1>Outbound Traffic Monitor</h1>
         <div class="metric">
             <strong>Total Usage:</strong>
-            <span id="total-usage">Loading...</span> GB
+            <span id="total-usage" aria-live="polite">Loading...</span> GB
         </div>
         <div class="metric">
             <strong>Daily Usage:</strong>
-            <span id="daily-usage">Loading...</span> GB
+            <span id="daily-usage" aria-live="polite">Loading...</span> GB
         </div>
         <div class="metric">
             <strong>Yesterday's Usage:</strong>
-            <span id="yesterday-usage">Loading...</span> GB
+            <span id="yesterday-usage" aria-live="polite">Loading...</span> GB
         </div>
         <div class="loading" id="loading-message">Fetching data...</div>
     </div>
 
     <script>
         function fetchData() {
-            $.getJSON("/data", function(data) {
-                $("#total-usage").text(data.total_usage_gb || "N/A");
-                $("#daily-usage").text(data.daily_usage_gb || "N/A");
-                $("#yesterday-usage").text(data.yesterday_usage_gb || "N/A");
-                $("#loading-message").hide(); // Hide loading message after data is fetched
-            }).fail(function() {
-                $("#total-usage").text("Error");
-                $("#daily-usage").text("Error");
-                $("#yesterday-usage").text("Error");
-                $("#loading-message").text("Failed to fetch data.");
-            });
+            // Show loading message before fetching data
+            $("#loading-message").show().text("Fetching data...");
+
+            $.getJSON("/data")
+                .done(function(data) {
+                    if (data.error) {
+                        // Handle API errors
+                        $("#total-usage").text("Error");
+                        $("#daily-usage").text("Error");
+                        $("#yesterday-usage").text("Error");
+                        $("#loading-message").text(`Error: ${data.error}`);
+                    } else {
+                        // Update metrics with fetched data
+                        $("#total-usage").text(data.total_usage_gb || "N/A");
+                        $("#daily-usage").text(data.daily_usage_gb || "N/A");
+                        $("#yesterday-usage").text(data.yesterday_usage_gb || "N/A");
+                        $("#loading-message").hide(); // Hide loading message
+                    }
+                })
+                .fail(function(jqXHR) {
+                    // Handle network or server errors
+                    let errorMessage = jqXHR.responseJSON?.error || "Unknown error";
+                    $("#total-usage").text("Error");
+                    $("#daily-usage").text("Error");
+                    $("#yesterday-usage").text("Error");
+                    $("#loading-message").text(`Failed to fetch data: ${errorMessage}`);
+                });
         }
 
         // Fetch data every 10 seconds
         setInterval(fetchData, 10000);
 
-        // Initial fetch
+        // Initial fetch on page load
         $(document).ready(function() {
             fetchData();
         });
