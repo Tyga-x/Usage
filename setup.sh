@@ -75,7 +75,7 @@ pip install --upgrade pip
 
 # Install Python dependencies in the virtual environment
 echo "Installing Python dependencies..."
-pip install flask flask-talisman gunicorn python-dotenv
+pip install flask flask-talisman gunicorn python-dotenv pytz
 
 # Deactivate the virtual environment (it will be reactivated by the systemd service)
 deactivate
