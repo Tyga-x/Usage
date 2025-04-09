@@ -26,32 +26,45 @@ def get_traffic_data():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
+        # Query total usage, upload, and download
+        cursor.execute("SELECT SUM(total), SUM(up), SUM(down) FROM outbound_traffics;")
+        result = cursor.fetchone()
+        total_usage = result[0] or 0  # Default to 0 if no data
+        upload_usage = result[1] or 0
+        download_usage = result[2] or 0
+
         # Get current date and yesterday's date in local time zone
         now = datetime.now(LOCAL_TIMEZONE)
         today = now.date()
         yesterday = today - timedelta(days=1)
 
-        # Query total usage
-        cursor.execute("SELECT SUM(total) FROM outbound_traffics;")
-        total_usage = cursor.fetchone()[0] or 0  # Default to 0 if no data
-
         # Query daily usage for today
-        cursor.execute("SELECT SUM(total) FROM outbound_traffics WHERE DATE(timestamp) = ?;", (today,))
+        cursor.execute(
+            "SELECT SUM(total) FROM outbound_traffics WHERE DATE(timestamp) = ?;",
+            (today,)
+        )
         daily_usage = cursor.fetchone()[0] or 0
 
         # Query daily usage for yesterday
-        cursor.execute("SELECT SUM(total) FROM outbound_traffics WHERE DATE(timestamp) = ?;", (yesterday,))
+        cursor.execute(
+            "SELECT SUM(total) FROM outbound_traffics WHERE DATE(timestamp) = ?;",
+            (yesterday,)
+        )
         yesterday_usage = cursor.fetchone()[0] or 0
 
         # Convert bytes to GB
         total_usage_gb = total_usage / (1024 ** 3)
         daily_usage_gb = daily_usage / (1024 ** 3)
         yesterday_usage_gb = yesterday_usage / (1024 ** 3)
+        upload_usage_gb = upload_usage / (1024 ** 3)
+        download_usage_gb = download_usage / (1024 ** 3)
 
         return {
             "total_usage_gb": round(total_usage_gb, 2),
             "daily_usage_gb": round(daily_usage_gb, 2),
             "yesterday_usage_gb": round(yesterday_usage_gb, 2),
+            "upload_usage_gb": round(upload_usage_gb, 2),
+            "download_usage_gb": round(download_usage_gb, 2),
         }
 
     except sqlite3.Error as e:
